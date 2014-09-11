@@ -57,6 +57,10 @@ Current month summary, machine interface:
     eboxbw --mi --summary vlabcdef
     eboxbw -ms vlabcdef
 
+All options reference:
+
+    eboxbw --help
+
 
 ### library
 
