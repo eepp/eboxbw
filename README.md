@@ -36,26 +36,35 @@ from eboxbw import eboxbw
 # use your VL code or your account number (this may take a few seconds)
 bw = eboxbw.get_bw('vlabcdef')
 
-# get bandwidth info for current month
+# get current month
 cur_month_bw = bw.get_cur_month()
 
-print('total download (GiB): ' + cur_month_bw.get_total_dl())
-print('total upload (GiB):   ' + cur_month_bw.get_total_ul())
-print('total combined (GiB): ' + cur_month_bw.get_total_combined())
+# which month?
+print('month: ' + cur_month_bw.get_date().strftime('%Y-%m'))
 
-# available months
-months_count = bw.get_months_count()
+# totals for this month
+print('total download (GiB): {}'.format(cur_month_bw.get_total_dl()))
+print('total upload (GiB):   {}'.format(cur_month_bw.get_total_ul()))
+print('total combined (GiB): {}'.format(cur_month_bw.get_total_combined()))
 
-# previous month (0 is first, 1 is previous, 2 is penultimate)
-prev_month = bw.get_month(1)
-penultimate_month = bw.get_month(2)
+# per day (days_bw_info is a dict)
+days_bw_info = cur_month_bw.get_days()
+
+for day in sorted(days_bw_info.keys()):
+    day_bw_info = days_bw_info[day]
+
+    print(day.strftime('%Y-%m-%d:'))
+    print('  download (GiB): {}'.format(day_bw_info.get_dl()))
+    print('  upload (GiB):   {}'.format(day_bw_info.get_ul()))
+    print('  combined (GiB): {}'.format(day_bw_info.get_combined()))
 ```
 
-Possible exceptions (all in `eboxbw.eboxbw`):
+Possible exceptions (all from `eboxbw.eboxbw`):
 
 ```python
-Error                   # eboxbw error
-    DownloadError       # cannot download page
-    InvalidPageError    # cannot parse page
-    WrongIdError        # wrong client identifier
+Error                           # eboxbw base error
+    DownloadError               # cannot download page
+    InvalidPageError            # cannot parse page
+    TooManyConnectionsError     # too many attempted connections
+    WrongIdError                # wrong client identifier
 ```
