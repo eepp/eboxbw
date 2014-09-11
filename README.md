@@ -10,6 +10,23 @@ usage (Québec only). It is based on
 installing
 ----------
 
+### easy way
+
+    sudo pip install eboxbw
+
+If Python 3 isn't the default Python of your setup:
+
+    sudo pip3 install eboxbw
+
+You might want to install the Python dependencies with your
+distribution package manager. They are:
+
+  * [beautifulsoup4](https://pypi.python.org/pypi/beautifulsoup4)
+  * [requests](https://pypi.python.org/pypi/requests)
+  * [termcolor](https://pypi.python.org/pypi/termcolor)
+
+### manual way
+
 Make sure you have Python 3 and
 [setuptools](https://pypi.python.org/pypi/setuptools).
 
@@ -18,13 +35,6 @@ Clone using Git and run `setup.py`:
     git clone https://github.com/eepp/eboxbw.git
     cd eboxbw
     sudo python3 setup.py install
-
-You might want to install the Python dependencies with your
-distribution package manager. They are:
-
-  * [beautifulsoup4](https://pypi.python.org/pypi/beautifulsoup4)
-  * [requests](https://pypi.python.org/pypi/requests)
-  * [termcolor](https://pypi.python.org/pypi/termcolor)
 
 
 using
