@@ -90,10 +90,10 @@ def _download_page(id):
 
 
 def _get_dlul_gb(raw_text):
-    m = re.search('^([0-9.]+)\\s+([gm])', raw_text, flags=re.I)
+    m = re.search('^([0-9.,]+)\\s+([gm])', raw_text, flags=re.I)
 
     if m:
-        number = float(m.group(1))
+        number = float(m.group(1).replace(',', '.'))
 
         if m.group(2).lower() == 'm':
             number /= 1024
