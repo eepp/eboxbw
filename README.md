@@ -1,8 +1,9 @@
 eboxbw
 ======
 
-Python 3 library for [Electronic Box](http://www.electronicbox.net/)
-cable Internet bandwidth usage (Québec only). It is based on
+Python 3 library and command line interface for
+[Electronic Box](http://www.electronicbox.net/) cable Internet bandwidth
+usage (Québec only). It is based on
 [this tool](http://consocable.electronicbox.net/index.php?lng=en).
 
 
@@ -21,12 +22,43 @@ Clone using Git and run `setup.py`:
 You might want to install the Python dependencies with your
 distribution package manager. They are:
 
-  * [BeautifulSoup 4](http://www.crummy.com/software/BeautifulSoup/)
-  * [Requests](http://docs.python-requests.org/en/latest/)
+  * [beautifulsoup4](https://pypi.python.org/pypi/beautifulsoup4)
+  * [requests](https://pypi.python.org/pypi/requests)
+  * [termcolor](https://pypi.python.org/pypi/termcolor)
 
 
 using
 -----
+
+
+### command line interface (with colors!)
+
+Simple lookup (all days of current month):
+
+    eboxbw vlabcdef
+
+Current month summary:
+
+    eboxbw --summary vlabcdef
+    eboxbw -s vlabcdef
+
+Current month summary, MiB:
+
+    eboxbw --sumary --unit m vlabcdef
+    eboxbw -s -um vlabcdef
+
+All days of current month, machine interface, MiB:
+
+    eboxbw --mi --unit m vlabcdef
+    eboxbw -m -um vlabcdef
+
+Current month summary, machine interface:
+
+    eboxbw --mi --summary vlabcdef
+    eboxbw -ms vlabcdef
+
+
+### library
 
 Simple example:
 

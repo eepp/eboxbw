@@ -39,12 +39,22 @@ packages = [
 install_requires = [
     'requests',
     'beautifulsoup4',
+    'termcolor',
 ]
 
+entry_points = {
+    'console_scripts': [
+        'eboxbw = eboxbw.cli:run'
+    ],
+}
+
+import eboxbw
+
 setup(name='eboxbw',
-      version=0.1,
+      version=eboxbw.__version__,
       description='Electronic Box cable Internet bandwidth usage',
       author='Philippe Proulx',
       url='https://github.com/eepp/eboxbw',
       packages=packages,
-      install_requires=install_requires)
+      install_requires=install_requires,
+      entry_points=entry_points)
