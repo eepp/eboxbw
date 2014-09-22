@@ -43,29 +43,29 @@ using
 
 ### command line interface (with colors!)
 
-Simple lookup (all days of current month):
+Simple lookup (current month summary):
 
     eboxbw vlabcdef
 
-Current month summary:
+Current month details:
 
-    eboxbw --summary vlabcdef
-    eboxbw -s vlabcdef
+    eboxbw --details vlabcdef
+    eboxbw -d vlabcdef
 
 Current month summary, MiB:
 
-    eboxbw --sumary --unit m vlabcdef
-    eboxbw -s -um vlabcdef
+    eboxbw --unit m vlabcdef
+    eboxbw -um vlabcdef
 
-All days of current month, machine interface, MiB:
+Current month details, machine interface, MiB:
 
-    eboxbw --mi --unit m vlabcdef
-    eboxbw -m -um vlabcdef
+    eboxbw --details --mi --unit m vlabcdef
+    eboxbw -dm -um vlabcdef
 
 Current month summary, machine interface:
 
-    eboxbw --mi --summary vlabcdef
-    eboxbw -ms vlabcdef
+    eboxbw --mi vlabcdef
+    eboxbw -m vlabcdef
 
 All options reference:
 

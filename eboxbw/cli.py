@@ -34,10 +34,10 @@ date, download, upload and combined bandwidth usage."""
 
     ap = argparse.ArgumentParser(description=desc)
 
+    ap.add_argument('-d', '--details', action='store_true',
+                    help='display more bandwidth usage details')
     ap.add_argument('-m', '--mi', action='store_true',
                     help='machine interface mode (for scripts)')
-    ap.add_argument('-s', '--summary', action='store_true',
-                    help='display only a summary of bandwidth usage')
     ap.add_argument('-u', '--unit', action='store', type=str,
                     default='g', metavar='UNIT',
                     help='set display unit to UNIT (\"g\" for GiB or \"m\" for MiB)')
@@ -64,7 +64,7 @@ def _print_error(msg):
     sys.exit(1)
 
 
-def _print_mi(month, conv_func, summary):
+def _print_mi(month, conv_func, details):
     def print_row(date, dl, ul, cb, date_cb):
         dl = '{:.3f}'.format(dl)
         ul = '{:.3f}'.format(ul)
@@ -73,14 +73,8 @@ def _print_mi(month, conv_func, summary):
 
         print(row)
 
-    if summary:
-        tdl = conv_func(month.get_total_dl())
-        tul = conv_func(month.get_total_ul())
-        tcb = conv_func(month.get_total_combined())
-        date = month.get_date()
 
-        print_row(date, tdl, tul, tcb, lambda d: d.strftime('%Y-%m'))
-    else:
+    if details:
         for date in sorted(month.get_days().keys()):
             day_bw = month.get_days()[date]
             dl = conv_func(day_bw.get_dl())
@@ -88,9 +82,16 @@ def _print_mi(month, conv_func, summary):
             cb = conv_func(day_bw.get_combined())
 
             print_row(date, dl, ul, cb, lambda d: d.strftime('%Y-%m-%d'))
+    else:
+        tdl = conv_func(month.get_total_dl())
+        tul = conv_func(month.get_total_ul())
+        tcb = conv_func(month.get_total_combined())
+        date = month.get_date()
+
+        print_row(date, tdl, tul, tcb, lambda d: d.strftime('%Y-%m'))
 
 
-def _print_human(month, conv_func, punit, summary):
+def _print_human(month, conv_func, punit, details):
     def print_row(date, dl, ul, cb, date_cb):
         cdl = colored('{:16.3f}'.format(dl), 'green', attrs=['bold'])
         cul = colored('{:16.3f}'.format(ul), 'red', attrs=['bold'])
@@ -100,14 +101,7 @@ def _print_human(month, conv_func, punit, summary):
         print(row)
 
 
-    if summary:
-        tdl = conv_func(month.get_total_dl())
-        tul = conv_func(month.get_total_ul())
-        tcb = conv_func(month.get_total_combined())
-        date = month.get_date()
-
-        print_row(date, tdl, tul, tcb, lambda d: d.strftime('%Y-%m   '))
-    else:
+    if details:
         for date in sorted(month.get_days().keys()):
             day_bw = month.get_days()[date]
             dl = conv_func(day_bw.get_dl())
@@ -115,6 +109,13 @@ def _print_human(month, conv_func, punit, summary):
             cb = conv_func(day_bw.get_combined())
 
             print_row(date, dl, ul, cb, lambda d: d.strftime('%Y-%m-%d'))
+    else:
+        tdl = conv_func(month.get_total_dl())
+        tul = conv_func(month.get_total_ul())
+        tcb = conv_func(month.get_total_combined())
+        date = month.get_date()
+
+        print_row(date, tdl, tul, tcb, lambda d: d.strftime('%Y-%m   '))
 
 
 def _do_eboxbw(args):
@@ -124,6 +125,8 @@ def _do_eboxbw(args):
         _print_error('cannot read bandwidth usage: wrong ID')
     except eboxbw.eboxbw.TooManyConnectionsError:
         _print_error('cannot read bandwidth usage: too many connection attempts')
+    except eboxbw.eboxbw.DownloadError:
+        _print_error('cannot read bandwidth usage: cannot download info')
     except:
         _print_error('cannot read bandwidth usage')
 
@@ -137,9 +140,9 @@ def _do_eboxbw(args):
         punit = 'MiB'
 
     if args.mi:
-        _print_mi(cur_month, conv_func, args.summary)
+        _print_mi(cur_month, conv_func, args.details)
     else:
-        _print_human(cur_month, conv_func, punit, args.summary)
+        _print_human(cur_month, conv_func, punit, args.details)
 
 
 def run():
