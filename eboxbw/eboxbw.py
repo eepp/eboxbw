@@ -48,6 +48,12 @@ class WrongIdError(Error):
         super().__init__('Wrong ID')
 
 
+class DownForMaintenanceError(Error):
+    def __init__(self):
+        super().__init__('Site is down for maintenance')
+
+
+
 class DayBwInfo:
     def __init__(self, date, dl_gb, ul_gb):
         self._date = date
@@ -131,6 +137,9 @@ def _check_error(page):
 
     if re.search('maximum of request', page, flags=re.I):
         raise TooManyConnectionsError()
+
+    if re.search('for maintenance', page, flags=re.I):
+        raise DownForMaintenanceError()
 
 
 def _get_bw_info(page):

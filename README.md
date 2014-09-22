@@ -109,6 +109,7 @@ Possible exceptions (all from `eboxbw.eboxbw`):
 
 ```python
 Error                           # eboxbw base error
+    DownForMaintenance          # site is down for maintenance
     DownloadError               # cannot download page
     InvalidPageError            # cannot parse page
     TooManyConnectionsError     # too many attempted connections
