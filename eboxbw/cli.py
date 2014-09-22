@@ -101,6 +101,9 @@ def _print_human(month, conv_func, punit, details):
         print(row)
 
 
+    print('date                  down              up        combined')
+    print('----------------------------------------------------------')
+
     if details:
         for date in sorted(month.get_days().keys()):
             day_bw = month.get_days()[date]
