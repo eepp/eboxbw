@@ -127,6 +127,8 @@ def _do_eboxbw(args):
         _print_error('cannot read bandwidth usage: too many connection attempts')
     except eboxbw.eboxbw.DownloadError:
         _print_error('cannot read bandwidth usage: cannot download info')
+    except eboxbw.eboxbw.DownForMaintenanceError:
+        _print_error('cannot read bandwidth usage: site is down for maintenance')
     except:
         _print_error('cannot read bandwidth usage')
 
