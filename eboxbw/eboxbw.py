@@ -208,7 +208,7 @@ def _text_to_gb_value(raw_text):
 
         return number
 
-    return None
+    raise HtmlLayoutChangedError('Cannot decode value: {}'.format(raw_text))
 
 
 def _check_error(page):
@@ -286,9 +286,12 @@ def _day_usage_from_tr(tr):
 
 
 def _get_cur_month_usage(soup):
-    table = soup.select('tr.table_white table tr.table_white table')[0]
-    tr = table.select('> tr')[1]
-    tds = tr.select('> td')
+    try:
+        table = soup.select('tr.table_white table tr.table_white table')[0]
+        tr = table.select('> tr')[1]
+        tds = tr.select('> td')
+    except:
+        raise HtmlLayoutChangedError('Current usage summary layout changed (table)')
 
     if len(tds) != 3:
         raise HtmlLayoutChangedError('Current usage summary layout changed (boxes)')
@@ -297,6 +300,10 @@ def _get_cur_month_usage(soup):
     ul_qty = _cur_month_qty_from_td(tds[1])
     cb_qty = _cur_month_qty_from_td(tds[2])
     trs = soup.select('#div1 > center > table > tr')
+
+    if not trs:
+        raise HtmlLayoutChangedError('Day usage details table layout changed')
+
     day_usages = []
 
     for tr in trs:
@@ -318,10 +325,14 @@ def _get_usage_info_from_page(page):
     except:
         raise InvalidPageError()
 
-    plan, extra_blocks, plan_cap, available_usage, has_super_off_peak = _get_usage_infos(soup)
+    try:
+        plan, extra_b, plan_cap, avail_usage, has_sop = _get_usage_infos(soup)
+    except:
+        raise HtmlLayoutChangedError('General informations layout changed')
+
     cur_month_usage = _get_cur_month_usage(soup)
-    usage_info = UsageInfo(plan, extra_blocks, plan_cap, available_usage,
-                           has_super_off_peak, [cur_month_usage])
+    usage_info = UsageInfo(plan, extra_b, plan_cap, avail_usage, has_sop,
+                           [cur_month_usage])
 
     return usage_info
 
