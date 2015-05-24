@@ -28,13 +28,16 @@ from setuptools import setup
 
 # make sure we run Python 3+ here
 v = sys.version_info
+
 if v.major < 3:
     sys.stderr.write('Sorry, eboxbw needs Python 3\n')
     sys.exit(1)
 
+
 packages = [
     'eboxbw',
 ]
+
 
 install_requires = [
     'requests',
@@ -42,16 +45,16 @@ install_requires = [
     'termcolor',
 ]
 
+
 entry_points = {
     'console_scripts': [
         'eboxbw = eboxbw.cli:run'
     ],
 }
 
-import eboxbw
 
 setup(name='eboxbw',
-      version=eboxbw.__version__,
+      version='2.1',
       description='Electronic Box cable Internet bandwidth usage',
       author='Philippe Proulx',
       author_email='eeppeliteloop@gmail.com',
