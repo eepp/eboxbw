@@ -76,3 +76,7 @@ Current month summary, MiB:
 All options reference:
 
     eboxbw --help
+
+Detailed output example:
+
+![Output screenshot](http://0x3b.org/ss/reveneer305.png)
