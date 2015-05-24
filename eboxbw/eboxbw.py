@@ -212,13 +212,13 @@ def _text_to_gb_value(raw_text):
 
 
 def _check_error(page):
-    if re.search('error', page, flags=re.I):
+    if re.search(r'error', page, flags=re.I):
         raise WrongIdError()
 
-    if re.search('maximum of request', page, flags=re.I):
+    if re.search(r'maximum of request', page, flags=re.I):
         raise TooManyConnectionsError()
 
-    if re.search('for maintenance', page, flags=re.I):
+    if re.search(r'for maintenance', page, flags=re.I):
         raise DownForMaintenanceError()
 
 
