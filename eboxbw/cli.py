@@ -1,6 +1,6 @@
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Philippe Proulx <eepp.ca>
+# Copyright (c) 2014-2015 Philippe Proulx <eepp.ca>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,11 +20,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import argparse
-import sys
 from termcolor import cprint, colored
+import argparse
 import eboxbw
-import eboxbw.eboxbw
+import sys
 
 
 def _parse_args():
@@ -36,8 +35,6 @@ date, download, upload and combined bandwidth usage."""
 
     ap.add_argument('-d', '--details', action='store_true',
                     help='display more bandwidth usage details')
-    ap.add_argument('-m', '--mi', action='store_true',
-                    help='machine interface mode (for scripts)')
     ap.add_argument('-u', '--unit', action='store', type=str,
                     default='g', metavar='UNIT',
                     help='set display unit to UNIT (\"g\" for GiB or \"m\" for MiB)')
@@ -64,78 +61,110 @@ def _print_error(msg):
     sys.exit(1)
 
 
-def _print_mi(month, conv_func, details):
+def _bold(t):
+    return colored(t, attrs=['bold'])
+
+
+def _prop(t):
+    return _bold(t)
+
+
+def _prop(t):
+    return colored(t, 'blue', attrs=['bold'])
+
+
+def _yes_no(v):
+    return {
+        True: colored('yes', 'green', attrs=['bold']),
+        False: colored('no', 'red', attrs=['bold']),
+    }[v]
+
+
+def _print_human(usage_info, conv_func, punit, details):
+    def gb_txt(gb):
+        return '{:.2f} {}'.format(conv_func(gb), punit)
+
+    def print_table_border():
+        print('+------------+------------------+------------------+------------------+')
+
     def print_row(date, dl, ul, cb, date_cb):
-        dl = '{:.3f}'.format(dl)
-        ul = '{:.3f}'.format(ul)
-        cb = '{:.3f}'.format(cb)
-        row = '{} {} {} {}'.format(date_cb(date), dl, ul, cb)
+        date_txt = date_cb(date)
+        fmt_row1 = '| {:10s} | {:>16s} | {:>16s} | {:>16s} |'
+        fmt_row2 = '|            | {:>16s} | {:>16s} | {:>16s} |'
 
-        print(row)
+        print(fmt_row1.format(date_txt, gb_txt(dl.real_gb), gb_txt(ul.real_gb),
+                              gb_txt(cb.real_gb)))
 
+        if dl.real_gb != dl.effective_gb and dl.effective_gb is not None:
+            print(fmt_row2.format(gb_txt(dl.effective_gb),
+                                  gb_txt(ul.effective_gb),
+                                  gb_txt(cb.effective_gb)))
+
+    def print_table_header():
+        print_table_border()
+        fmt = '|    {}    |     {}     |      {}      |     {}     |'
+        print(fmt.format(_bold('date'), _bold('download'), _bold('upload'),
+                         _bold('combined')))
+        print_table_border()
 
     if details:
-        for date in sorted(month.get_days().keys()):
-            day_bw = month.get_days()[date]
-            dl = conv_func(day_bw.get_dl())
-            ul = conv_func(day_bw.get_ul())
-            cb = conv_func(day_bw.get_combined())
+        print('{}:            {}'.format(_prop('Plan'), usage_info.plan))
+        print('{}: {}'.format(_prop('Super off peak?'),
+                                         _yes_no(usage_info.has_super_off_peak)))
+        print('{}:    {} x 75 GiB'.format(_prop('Extra blocks'),
+                                          usage_info.extra_blocks))
+        print('{}:   {}'.format(_prop('Plan capacity'),
+                                   gb_txt(usage_info.plan_cap.real_gb)))
+        print('{}: {}'.format(_prop('Available usage'),
+                                   gb_txt(usage_info.available_usage.real_gb)))
+        print()
 
-            print_row(date, dl, ul, cb, lambda d: d.strftime('%Y-%m-%d'))
-    else:
-        tdl = conv_func(month.get_total_dl())
-        tul = conv_func(month.get_total_ul())
-        tcb = conv_func(month.get_total_combined())
-        date = month.get_date()
+    more = ''
 
-        print_row(date, tdl, tul, tcb, lambda d: d.strftime('%Y-%m'))
+    if usage_info.has_super_off_peak:
+        more = ' (effective usage on second row)'
 
-
-def _print_human(month, conv_func, punit, details):
-    def print_row(date, dl, ul, cb, date_cb):
-        cdl = colored('{:16.3f}'.format(dl), 'green', attrs=['bold'])
-        cul = colored('{:16.3f}'.format(ul), 'red', attrs=['bold'])
-        ccb = colored('{:16.3f}'.format(cb), 'yellow', attrs=['bold'])
-        row = date_cb(date) + cdl + cul + ccb
-
-        print(row)
-
-
-    print('date                  down              up        combined')
-    print('----------------------------------------------------------')
+    print('{}{}:'.format(_prop('Usage summary'), more))
+    print_table_header()
+    cur_month_usage = usage_info.cur_month_usage
+    tdl = cur_month_usage.dl_usage
+    tul = cur_month_usage.ul_usage
+    tcb = cur_month_usage.combined_usage
+    date = cur_month_usage.date
+    print_row(date, tdl, tul, tcb, lambda d: d.strftime('%Y-%m'))
+    print_table_border()
 
     if details:
-        for date in sorted(month.get_days().keys()):
-            day_bw = month.get_days()[date]
-            dl = conv_func(day_bw.get_dl())
-            ul = conv_func(day_bw.get_ul())
-            cb = conv_func(day_bw.get_combined())
+        print()
+        print('{}:'.format(_prop('Usage details')))
+        print_table_header()
 
-            print_row(date, dl, ul, cb, lambda d: d.strftime('%Y-%m-%d'))
-    else:
-        tdl = conv_func(month.get_total_dl())
-        tul = conv_func(month.get_total_ul())
-        tcb = conv_func(month.get_total_combined())
-        date = month.get_date()
+        for du in cur_month_usage.days_usage:
+            print_row(du.date, du.dl_usage, du.ul_usage, du.combined_usage,
+                      lambda d: d.strftime('%Y-%m-%d'))
 
-        print_row(date, tdl, tul, tcb, lambda d: d.strftime('%Y-%m   '))
+        print_table_border()
 
 
-def _do_eboxbw(args):
+def _main(args):
     try:
-        bw = eboxbw.eboxbw.get_bw(args.id)
-    except eboxbw.eboxbw.WrongIdError:
+        usage_info = eboxbw.get_usage_info(args.id)
+    except eboxbw.WrongIdError:
         _print_error('cannot read bandwidth usage: wrong ID')
-    except eboxbw.eboxbw.TooManyConnectionsError:
+    except eboxbw.TooManyConnectionsError:
         _print_error('cannot read bandwidth usage: too many connection attempts')
-    except eboxbw.eboxbw.DownloadError:
+    except eboxbw.DownloadError:
         _print_error('cannot read bandwidth usage: cannot download info')
-    except eboxbw.eboxbw.DownForMaintenanceError:
+    except eboxbw.DownForMaintenanceError:
         _print_error('cannot read bandwidth usage: site is down for maintenance')
-    except:
-        _print_error('cannot read bandwidth usage')
+    except eboxbw.HtmlLayoutChangedError:
+        _print_error('cannot read bandwidth usage: HTML layout changed')
+    except eboxbw.InvalidPageError:
+        _print_error('cannot read bandwidth usage: invalid HTML page')
+    except Exception as e:
+        raise e
+        _print_error('cannot read bandwidth usage: {}'.format(e))
 
-    cur_month = bw.get_cur_month()
 
     if args.unit == 'g':
         conv_func = lambda x: x
@@ -144,16 +173,13 @@ def _do_eboxbw(args):
         conv_func = lambda x: x * 1024
         punit = 'MiB'
 
-    if args.mi:
-        _print_mi(cur_month, conv_func, args.details)
-    else:
-        _print_human(cur_month, conv_func, punit, args.details)
+    _print_human(usage_info, conv_func, punit, args.details)
 
 
 def run():
     args = _parse_args()
 
     try:
-        _do_eboxbw(args)
+        _main(args)
     except KeyboardInterrupt:
         sys.exit(1)

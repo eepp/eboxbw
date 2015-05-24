@@ -20,4 +20,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-__version__ = 1.0
+__version__ = '2.0'
+
+
+from .eboxbw import Error, DownloadError, InvalidPageError, \
+                    HtmlLayoutChangedError, TooManyConnectionsError, \
+                    WrongIdError, DownForMaintenanceError, Quantity, \
+                    DayUsage, MonthUsage, UsageInfo, \
+                    get_usage_info, get_usage_info_from_page

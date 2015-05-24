@@ -1,6 +1,6 @@
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Philippe Proulx <eepp.ca>
+# Copyright (c) 2014-2015 Philippe Proulx <eepp.ca>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@
 
 import re
 import requests
-from datetime import datetime, date
+import datetime
 from bs4 import BeautifulSoup
 
 
@@ -35,6 +35,10 @@ class DownloadError(Error):
 
 
 class InvalidPageError(Error):
+    pass
+
+
+class HtmlLayoutChangedError(InvalidPageError):
     pass
 
 
@@ -53,61 +57,137 @@ class DownForMaintenanceError(Error):
         super().__init__('Site is down for maintenance')
 
 
+class Quantity:
+    def __init__(self, real_gb, effective_gb=None):
+        self._real_gb = real_gb
+        self._effective_gb = effective_gb
 
-class DayBwInfo:
-    def __init__(self, date, dl_gb, ul_gb):
+    @property
+    def real_gb(self):
+        return self._real_gb
+
+    @property
+    def effective_gb(self):
+        return self._effective_gb
+
+    @property
+    def real_mb(self):
+        return self._real_gb * 1024
+
+    @property
+    def effective_mb(self):
+        return self._effective_gb * 1024
+
+    @property
+    def real_kb(self):
+        return self.real_mb * 1024
+
+    @property
+    def effective_kb(self):
+        return self.effective_mb * 1024
+
+    def __repr__(self):
+        fmt = 'Quantity(real_gb={}, effective_gb={})'
+
+        return fmt.format(self._real_gb, self._effective_gb)
+
+
+class DayUsage:
+    def __init__(self, date, dl_usage, ul_usage, combined_usage):
         self._date = date
-        self._dl_gb = dl_gb
-        self._ul_gb = ul_gb
+        self._dl_usage = dl_usage
+        self._ul_usage = ul_usage
+        self._combined_usage = combined_usage
 
-    def get_date(self):
+    @property
+    def date(self):
         return self._date
 
-    def get_dl(self):
-        return self._dl_gb
+    @property
+    def dl_usage(self):
+        return self._dl_usage
 
-    def get_ul(self):
-        return self._ul_gb
+    @property
+    def ul_usage(self):
+        return self._ul_usage
 
-    def get_combined(self):
-        return self._dl_gb + self._ul_gb
+    @property
+    def combined_usage(self):
+        return self._combined_usage
 
 
-class MonthBwInfo:
-    def __init__(self, date, days_bw_info):
+class MonthUsage:
+    def __init__(self, date, days_usage, dl_usage, ul_usage, combined_usage):
         self._date = date
-        self._days_bw_info = days_bw_info
+        self._days_usage = days_usage
+        self._dl_usage = dl_usage
+        self._ul_usage = ul_usage
+        self._combined_usage = combined_usage
 
-    def get_date(self):
+    @property
+    def date(self):
         return self._date
 
-    def get_days(self):
-        return self._days_bw_info
+    @property
+    def dl_usage(self):
+        return self._dl_usage
 
-    def get_total_dl(self):
-        return sum([d.get_dl() for d in self._days_bw_info.values()])
+    @property
+    def ul_usage(self):
+        return self._ul_usage
 
-    def get_total_ul(self):
-        return sum([d.get_ul() for d in self._days_bw_info.values()])
+    @property
+    def combined_usage(self):
+        return self._combined_usage
 
-    def get_total_combined(self):
-        return sum([d.get_combined() for d in self._days_bw_info.values()])
+    @property
+    def days_usage(self):
+        return self._days_usage
 
 
-class BwInfo:
-    def __init__(self, months_bw_info):
-        self._months_bw_info = months_bw_info
+class UsageInfo:
+    def __init__(self, plan, extra_blocks, plan_cap, available_usage,
+                 has_super_off_peak, months_usage):
+        self._plan = plan
+        self._extra_blocks = extra_blocks
+        self._plan_cap = plan_cap
+        self._available_usage = available_usage
+        self._has_super_off_peak = has_super_off_peak
+        self._months_usage = months_usage
 
-    def get_cur_month(self):
-        return self._months_bw_info[0]
+    @property
+    def plan(self):
+        return self._plan
+
+    @property
+    def extra_blocks(self):
+        return self._extra_blocks
+
+    @property
+    def plan_cap(self):
+        return self._plan_cap
+
+    @property
+    def available_usage(self):
+        return self._available_usage
+
+    @property
+    def has_super_off_peak(self):
+        return self._has_super_off_peak
+
+    @property
+    def cur_month_usage(self):
+        return self._months_usage[0]
 
 
 def _download_page(id):
-    fmt = 'http://consocable.electronicbox.net/index.php?actions=list&lng=en&codeVL={}'
+    fmt = 'http://consocable.electronicbox.net/index.php?actions=list&lng=en&code={}'
     url = fmt.format(id)
 
     try:
-        resp = requests.get(url)
+        resp = requests.get(url, timeout=15)
+    except requests.exceptions.Timeout:
+        raise DownloadError('Timeout')
     except Exception as e:
         raise DownloadError('Cannot get information: ' + str(e))
 
@@ -117,7 +197,7 @@ def _download_page(id):
     return resp.text
 
 
-def _get_dlul_gb(raw_text):
+def _text_to_gb_value(raw_text):
     m = re.search('^([0-9.,]+)\\s+([gm])', raw_text, flags=re.I)
 
     if m:
@@ -142,7 +222,95 @@ def _check_error(page):
         raise DownForMaintenanceError()
 
 
-def _get_bw_info(page):
+def _has_super_off_peak(soup):
+    return not bool(soup.select('.order_offpeak'))
+
+
+def _get_usage_infos(soup):
+    info_table = soup.select('table table')[0]
+    trs = info_table.select('> tr')
+    plan = trs[0].select('div')[0].text.replace('Plan:', '').strip()
+    extra_blocks = trs[1].select('div')[0].text
+    m = re.search(r'(\d+) [xX]', extra_blocks)
+    extra_blocks = int(m.group(1))
+    plan_cap = trs[2].select('div')[0].text.replace('Plan total:', '').strip()
+    plan_cap = _text_to_gb_value(plan_cap)
+    plan_cap = Quantity(plan_cap, plan_cap)
+    available_usage = trs[3].select('div')[0].text.replace('Available:', '')
+    available_usage = available_usage.strip()
+    available_usage = _text_to_gb_value(available_usage)
+    available_usage = Quantity(available_usage, available_usage)
+    has_super_off_peak = _has_super_off_peak(soup)
+
+    return plan, extra_blocks, plan_cap, available_usage, has_super_off_peak
+
+
+def _cur_month_qty_from_td(td):
+    span = td.select('span.txtdata')[0]
+    barf = span.select('> br')[0].text
+    items = re.findall('\d+(?:[.,]\d+?)?\s*[GgMm]', barf)
+
+    if len(items) == 1:
+        # non-super off peak
+        gb = _text_to_gb_value(items[0])
+
+        return Quantity(gb, gb)
+    elif len(items) == 3:
+        # super off peak
+        real_gb = _text_to_gb_value(items[0])
+        effective_gb = _text_to_gb_value(items[2])
+
+        return Quantity(real_gb, effective_gb)
+    else:
+        raise HtmlLayoutChangedError('Current usage summary layout changed (box)')
+
+
+def _day_usage_from_tr(tr):
+    tds = tr.select('> td')
+
+    if len(tds) != 4:
+        return None
+
+    raw_date = tds[0].text.strip()
+    m = re.match(r'(\d{4})-(\d{2})-(\d{2})', raw_date)
+
+    if not m:
+        return None
+
+    date = datetime.date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    dl_qty = Quantity(_text_to_gb_value(tds[1].text))
+    ul_qty = Quantity(_text_to_gb_value(tds[2].text))
+    cb_qty = Quantity(_text_to_gb_value(tds[3].text))
+
+    return DayUsage(date, dl_qty, ul_qty, cb_qty)
+
+
+def _get_cur_month_usage(soup):
+    table = soup.select('tr.table_white table tr.table_white table')[0]
+    tr = table.select('> tr')[1]
+    tds = tr.select('> td')
+
+    if len(tds) != 3:
+        raise HtmlLayoutChangedError('Current usage summary layout changed (boxes)')
+
+    dl_qty = _cur_month_qty_from_td(tds[0])
+    ul_qty = _cur_month_qty_from_td(tds[1])
+    cb_qty = _cur_month_qty_from_td(tds[2])
+    trs = soup.select('#div1 > center > table > tr')
+    day_usages = []
+
+    for tr in trs:
+        day_usage = _day_usage_from_tr(tr)
+
+        if day_usage is not None:
+            day_usages.append(day_usage)
+
+    date = day_usages[0].date.replace(day=1)
+
+    return MonthUsage(date, day_usages, dl_qty, ul_qty, cb_qty)
+
+
+def _get_usage_info_from_page(page):
     _check_error(page)
 
     try:
@@ -150,59 +318,17 @@ def _get_bw_info(page):
     except:
         raise InvalidPageError()
 
-    tables = soup.select('table')
+    plan, extra_blocks, plan_cap, available_usage, has_super_off_peak = _get_usage_infos(soup)
+    cur_month_usage = _get_cur_month_usage(soup)
+    usage_info = UsageInfo(plan, extra_blocks, plan_cap, available_usage,
+                           has_super_off_peak, [cur_month_usage])
 
-    if len(tables) < 5:
-        raise InvalidPageError()
-
-    cm_table = tables[4]
-    cm_table_trs = cm_table.select('> tr')
-
-    if not cm_table_trs:
-        raise InvalidPageError()
-
-    days_bw_info = {}
-
-    for tr in cm_table_trs:
-        tds = tr.select('> td')
-
-        if len(tds) < 3:
-            continue
-
-        first_td_text = tds[0].text.strip()
-
-        m = re.search('^(\d{4}-\d{2}-\d{2})', first_td_text)
-
-        if not m:
-            continue
-
-        date = datetime.strptime(m.group(1), '%Y-%m-%d').date()
-
-        dl_gb_raw = tds[1].text.strip()
-        ul_gb_raw = tds[2].text.strip()
-
-        dl_gb = _get_dlul_gb(dl_gb_raw)
-        ul_gb = _get_dlul_gb(ul_gb_raw)
-
-        if dl_gb is None or ul_gb is None:
-            raise InvalidPageError()
-
-        days_bw_info[date] = DayBwInfo(date, dl_gb, ul_gb)
-
-    if not days_bw_info:
-        raise InvalidPageError()
-
-    month_date = list(days_bw_info.keys())[0].replace(day=1)
-    cur_month_bw_info = MonthBwInfo(month_date, days_bw_info)
-
-    return BwInfo([cur_month_bw_info])
+    return usage_info
 
 
-def get_bw(id):
-    page = _download_page(id)
-
-    return _get_bw_info(page)
+def get_usage_info(id):
+    return _get_usage_info_from_page(_download_page(id))
 
 
-def get_bw_from_page(page):
-    return _get_bw_info(page)
+def get_usage_info_from_page(page):
+    return _get_usage_info_from_page(page)
