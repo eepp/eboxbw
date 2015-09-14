@@ -80,6 +80,10 @@ def _yes_no(v):
     }[v]
 
 
+def _effective(t):
+    return colored(t, 'yellow')
+
+
 def _print_human(usage_info, conv_func, punit, details):
     def gb_txt(gb):
         return '{:.2f} {}'.format(conv_func(gb), punit)
@@ -90,15 +94,18 @@ def _print_human(usage_info, conv_func, punit, details):
     def print_row(date, dl, ul, cb, date_cb):
         date_txt = date_cb(date)
         fmt_row1 = '| {:10s} | {:>16s} | {:>16s} | {:>16s} |'
-        fmt_row2 = '|            | {:>16s} | {:>16s} | {:>16s} |'
+        fmt_row2 = '|            | {} | {} | {} |'
 
         print(fmt_row1.format(date_txt, gb_txt(dl.real_gb), gb_txt(ul.real_gb),
                               gb_txt(cb.real_gb)))
 
-        if dl.real_gb != dl.effective_gb and dl.effective_gb is not None:
-            print(fmt_row2.format(gb_txt(dl.effective_gb),
-                                  gb_txt(ul.effective_gb),
-                                  gb_txt(cb.effective_gb)))
+        if dl.effective_gb is not None:
+            dl_txt = '{:>16s}'.format(gb_txt(dl.effective_gb))
+            ul_txt = '{:>16s}'.format(gb_txt(ul.effective_gb))
+            cb_txt = '{:>16s}'.format(gb_txt(cb.effective_gb))
+
+            print(fmt_row2.format(_effective(dl_txt), _effective(ul_txt),
+                                  _bold(_effective(cb_txt))))
 
     def print_table_header():
         print_table_border()
