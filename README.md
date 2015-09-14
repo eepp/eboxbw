@@ -1,6 +1,8 @@
 eboxbw
 ======
 
+[![](https://img.shields.io/pypi/v/eboxbw.svg)](https://pypi.python.org/pypi/eboxbw)
+
 **eboxbw** is a Python 3 package and a command line interface for
 getting [Electronic Box](http://www.electronicbox.net/) cable Internet
 bandwidth usage (Québec only). It is based on
