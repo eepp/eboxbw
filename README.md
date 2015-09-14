@@ -81,4 +81,4 @@ All options reference:
 
 Detailed output example:
 
-![Output screenshot](http://0x3b.org/ss/reveneer305.png)
+![Detailed output screenshot](http://ss.0x3b.org/nonflagellate530.png)
