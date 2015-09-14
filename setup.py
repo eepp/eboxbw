@@ -54,7 +54,7 @@ entry_points = {
 
 
 setup(name='eboxbw',
-      version='2.2',
+      version='2.2.1',
       description='Electronic Box cable Internet bandwidth usage',
       author='Philippe Proulx',
       author_email='eeppeliteloop@gmail.com',
