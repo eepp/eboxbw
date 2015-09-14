@@ -321,7 +321,7 @@ def _get_usage_info_from_page(page):
     _check_error(page)
 
     try:
-        soup = BeautifulSoup(page)
+        soup = BeautifulSoup(page, "html.parser")
     except:
         raise InvalidPageError()
 
