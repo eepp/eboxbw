@@ -181,11 +181,15 @@ class UsageInfo:
 
 
 def _download_page(id):
-    fmt = 'http://consocable.electronicbox.net/index.php?actions=list&lng=en&code={}'
-    url = fmt.format(id)
+    url = 'http://conso.electronicbox.net/index.php'
+    payload = {
+        'actions': 'list',
+        'lng': 'en',
+        'code': id,
+    }
 
     try:
-        resp = requests.get(url, timeout=15)
+        resp = requests.post(url, timeout=15, data=payload)
     except requests.exceptions.Timeout:
         raise DownloadError('Timeout')
     except Exception as e:
