@@ -181,7 +181,7 @@ class UsageInfo:
 
 
 def _download_page(id):
-    url = 'http://conso.electronicbox.net/index.php'
+    url = 'http://conso.ebox.ca/index.php'
     payload = {
         'actions': 'list',
         'lng': 'en',
