@@ -61,6 +61,10 @@ def _print_error(msg):
     sys.exit(1)
 
 
+def _print_warning(msg):
+    cprint('warning: {}'.format(msg), 'yellow', attrs=['bold'], file=sys.stderr)
+
+
 def _bold(t):
     return colored(t, attrs=['bold'])
 
@@ -128,16 +132,20 @@ def _print_human(usage_info, conv_func, punit, details):
 
     more = ''
 
+    cur_month_usage = usage_info.cur_month_usage
+    date = cur_month_usage.date
+    if date is None:
+        _print_warning('No usage data available yet for current month')
+        return
+
     if usage_info.has_super_off_peak:
         more = ' (effective usage on second row)'
 
     print('{}{}:'.format(_prop('Usage summary'), more))
     print_table_header()
-    cur_month_usage = usage_info.cur_month_usage
     tdl = cur_month_usage.dl_usage
     tul = cur_month_usage.ul_usage
     tcb = cur_month_usage.combined_usage
-    date = cur_month_usage.date
     print_row(date, tdl, tul, tcb, lambda d: d.strftime('%Y-%m'))
     print_table_border()
 

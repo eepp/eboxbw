@@ -316,7 +316,10 @@ def _get_cur_month_usage(soup):
         if day_usage is not None:
             day_usages.append(day_usage)
 
-    date = day_usages[0].date.replace(day=1)
+    try:
+        date = day_usages[0].date.replace(day=1)
+    except IndexError:
+        date = None
 
     return MonthUsage(date, day_usages, dl_qty, ul_qty, cb_qty)
 
