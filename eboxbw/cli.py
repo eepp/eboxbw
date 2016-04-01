@@ -134,8 +134,9 @@ def _print_human(usage_info, conv_func, punit, details):
 
     cur_month_usage = usage_info.cur_month_usage
     date = cur_month_usage.date
+
     if date is None:
-        _print_warning('No usage data available yet for current month')
+        _print_warning('no usage data available yet for current month')
         return
 
     if usage_info.has_super_off_peak:
