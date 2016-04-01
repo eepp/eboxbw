@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-__version__ = '2.3.2'
+__version__ = '2.3.3'
 
 
 from .eboxbw import Error, DownloadError, InvalidPageError, \
