@@ -251,8 +251,7 @@ def _get_usage_infos(soup):
 
 def _cur_month_qty_from_td(td):
     span = td.select('span.txtdata')[0]
-    barf = span.select('> br')[0].text
-    items = re.findall('\d+(?:[.,]\d+?)?\s*[GgMm]', barf)
+    items = re.findall('\d+(?:[.,]\d+?)?\s*[GgMm]', str(span))
 
     if len(items) == 1:
         # non-super off peak
