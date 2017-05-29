@@ -70,10 +70,6 @@ def _bold(t):
 
 
 def _prop(t):
-    return _bold(t)
-
-
-def _prop(t):
     return colored(t, 'blue', attrs=['bold'])
 
 
