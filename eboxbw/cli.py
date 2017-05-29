@@ -178,8 +178,8 @@ def _main(args):
     except eboxbw.InvalidPageError:
         _print_error('cannot read bandwidth usage: invalid HTML page')
     except Exception as e:
-        raise e
         _print_error('cannot read bandwidth usage: {}'.format(e))
+        raise e
 
 
     if args.unit == 'g':
