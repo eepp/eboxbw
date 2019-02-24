@@ -232,7 +232,7 @@ def _has_super_off_peak(soup):
 
 def _get_usage_infos(soup):
     info_table = soup.select('table table')[0]
-    trs = info_table.select('> tr')
+    trs = info_table.select('tbody > tr')
     plan = trs[0].select('div')[0].text.replace('Plan:', '').strip()
     extra_blocks = trs[1].select('div')[0].text
     m = re.search(r'(\d+) [xX]', extra_blocks)
@@ -269,7 +269,7 @@ def _cur_month_qty_from_td(td):
 
 
 def _day_usage_from_tr(tr):
-    tds = tr.select('> td')
+    tds = tr.select('tr > td')
 
     if len(tds) != 4:
         return None
@@ -291,8 +291,8 @@ def _day_usage_from_tr(tr):
 def _get_cur_month_usage(soup):
     try:
         table = soup.select('tr.table_white table tr.table_white table')[0]
-        tr = table.select('> tr')[1]
-        tds = tr.select('> td')
+        tr = table.select('tbody > tr')[1]
+        tds = tr.select('tr > td')
     except:
         raise HtmlLayoutChangedError('Current usage summary layout changed (table)')
 
@@ -302,7 +302,7 @@ def _get_cur_month_usage(soup):
     dl_qty = _cur_month_qty_from_td(tds[0])
     ul_qty = _cur_month_qty_from_td(tds[1])
     cb_qty = _cur_month_qty_from_td(tds[2])
-    trs = soup.select('#div1 > center > table > tr')
+    trs = soup.select('#div1 > center > table > tbody > tr')
 
     if not trs:
         raise HtmlLayoutChangedError('Day usage details table layout changed')
